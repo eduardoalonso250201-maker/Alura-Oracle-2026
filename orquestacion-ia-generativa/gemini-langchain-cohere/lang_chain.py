@@ -1,12 +1,13 @@
-
 # Integration with Google's Gemini chat models for LLM inference
 from langchain_google_genai import ChatGoogleGenerativeAI
+# Integration with Cohere's chat models for LLM inference
+from langchain_cohere import ChatCohere
 # Core message types used to build chat prompts
 from langchain_core.messages import HumanMessage
 # Model identifier for the Gemini Flash model
 from my_models import GEMINI_FLASH
-# API key for accessing the Gemini service
-from my_keys import GEMINI_API_KEY
+# API key for accessing the Gemini and cohere service
+from my_keys import GEMINI_API_KEY, COHERE_API_KEY
 # Utility function that converts an image file into a base64 string
 from my_helper import encode_image
 
@@ -16,6 +17,21 @@ llm = ChatGoogleGenerativeAI(
     model=GEMINI_FLASH
 )
 
+#here we invoke the gemini model with a simple question, the model will return a response object that contains the content of the answer
+respuesta = llm.invoke("Cuales canales colombianos de youtube me recomiendas para saber mas sobre telefonos inteligentes?")
+print(f"Gemini: ", respuesta.content)
+
+
+# Initialize the Cohere model with the API key
+llm = ChatCohere(
+    cohere_api_key=COHERE_API_KEY
+)
+#here we invoke the cohere model with a simple question, the model will return a response object that contains the content of the answer
+#On the documentation of each API you can find how to call the model, response format, and other parameters 
+respuesta = llm.invoke([HumanMessage(content="Cuales canales colombianos de youtube me recomiendas para saber mas sobre telefonos inteligentes?")])
+print(f"Cohere: ", respuesta.content)
+
+"""
 #we can encode the image using the helper function
 imagen = encode_image('datos/ejemplo_grafico.jpg')
 
@@ -42,3 +58,4 @@ mensaje = HumanMessage(
 #the following line indicates the way to invoke the model, we can send a list of messages, in this case we only have one message
 respuesta = llm.invoke([mensaje])
 print(respuesta)
+"""
