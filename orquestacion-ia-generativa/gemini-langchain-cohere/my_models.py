@@ -1,2 +1,2 @@
 GEMINI_PRO = "gemini-1.5-pro"
-GEMINI_FLASH = "gemini-2.5-flash"
+GEMINI_FLASH = "gemini-2.5-flash" #esta se actualizo respecto a la que moestraba el video ya que no exite ya la 1.5

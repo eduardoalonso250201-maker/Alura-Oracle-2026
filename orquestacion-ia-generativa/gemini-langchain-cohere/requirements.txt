@@ -6,4 +6,5 @@ langchain-core==0.3.27
 langchain-google-genai==2.0.4
 pillow==11.0.0
 python-dotenv==1.0.1
-langchain-cohere==0.4.4
+langchain-cohere==0.6.0
+cohere==5.21.1
