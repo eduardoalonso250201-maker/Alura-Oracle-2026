@@ -98,7 +98,7 @@ template_respuesta = PromptTemplate(
 )
 
 
-cadena_resumen = template_respuesta | llm | StrOutputParser()
+cadena_resumen = template_respuesta | llm | parser_json
 
 cadena_compuesta = (cadena_analisis | cadena_resumen)
 
