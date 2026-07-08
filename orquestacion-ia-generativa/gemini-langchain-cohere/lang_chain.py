@@ -14,10 +14,12 @@ from my_helper import encode_image
 #we add a new module "promttemplate", wich enable comunication without the need of using the messages module (system, user, etc)
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 #This library is used to obtain the output of the model in a specific format, for example only the text...
-from langchain_core.output_parsers import StrOutputParser
-
+from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
 #The newt module permit to see each step of the LLM chain
 from langchain_core.globals import set_debug
+#we import the class that we will use to parse the output of the model
+from detalles_imagen import Detallesimagen
+
 set_debug(True)
 
 # Initialize the Google Generative AI model with the API key and model name
@@ -70,6 +72,11 @@ template_analisis = ChatPromptTemplate.from_messages(
 # Build a pipeline: prompt template -> LLM -> string output parser
 cadena_analisis = template_analisis | llm | StrOutputParser()
 
+#the next lines will help to give a more structured output, using the pydantic model defined in detalles_imagen.py
+parser_json = JsonOutputParser(
+    pydantic_object=Detallesimagen
+)
+
 #we create a new template for the response
 #This template or promt will receive the output of the first model
 template_respuesta = PromptTemplate(
@@ -80,14 +87,18 @@ template_respuesta = PromptTemplate(
 
                 #RESULTADO DE LA IMAGEN
                 {respuesta_analisis_imagen}
+
+                #FORMATO DE SALIDA
+                {formato_salida}
                """,
-               input_variables=["respuesta_analisis_imagen"]
+               input_variables=["respuesta_analisis_imagen"],
+               partial_variables={
+                   "formato_salida":parser_json.get_format_instructions()
+               }
 )
 
-# Initialize the Cohere model with the API key
-llm_cohere = ChatCohere(cohere_api_key=COHERE_API_KEY)
 
-cadena_resumen = template_respuesta | llm_cohere | StrOutputParser()
+cadena_resumen = template_respuesta | llm | StrOutputParser()
 
 cadena_compuesta = (cadena_analisis | cadena_resumen)
 
