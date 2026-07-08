@@ -70,13 +70,6 @@ template_analisis = ChatPromptTemplate.from_messages(
 # Build a pipeline: prompt template -> LLM -> string output parser
 cadena_analisis = template_analisis | llm | StrOutputParser()
 
-# Run the pipeline, filling in the image variable, and get the plain text respons 
-respuesta_analisis = cadena_analisis.invoke({"imagen_informada": imagen})
-
-print(respuesta_analisis)
-
-#We are going to create a new chain to connect two LLMs
-
 #we create a new template for the response
 #This template or promt will receive the output of the first model
 template_respuesta = PromptTemplate(
