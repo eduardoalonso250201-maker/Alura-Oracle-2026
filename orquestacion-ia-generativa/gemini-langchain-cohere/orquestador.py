@@ -1,15 +1,14 @@
 # Integration with Google's Gemini chat models for LLM inference
 from langchain_google_genai import ChatGoogleGenerativeAI
-# Integration with Cohere's chat models for LLM inference
-from langchain_cohere import ChatCohere
 from my_models import GEMINI_FLASH
 # API key for accessing the Gemini and cohere service
-from my_keys import GEMINI_API_KEY, COHERE_API_KEY
+from my_keys import GEMINI_API_KEY
 #The newt module permit to see each step of the LLM chain
 from langchain_core.globals import set_debug
 #the new line permit autonomy of the model, usign an agent called react (reasoning and acting)
-from langchain import hub
-from langchain.agents import create_react_agent, Tool 
+from langchain_core.prompts import PromptTemplate
+from langchain_classic.agents import create_react_agent, Tool
+from herramienta_analisis_imagen import HerramientaAnalisisImagen
 
 set_debug(False)
 
@@ -21,7 +20,8 @@ class AgenteOrquestador:
             model=GEMINI_FLASH
         )
        
-        herramienta_analisis_imagen = None
+       #Now we add the class that we created in herramienta_analisis_imagen.py, to be used by the agent
+        herramienta_analisis_imagen = HerramientaAnalisisImagen()
 
         #second element of the class, a list with the tools that the agent can use, and its functions
         self.tools = [
@@ -34,7 +34,26 @@ class AgenteOrquestador:
         ]
 
         #third element of the class, the prompt
-        prompt = hub.pull("hwchase17/react")
+        prompt = PromptTemplate.from_template(
+            """Answer the following questions as best you can. You have access to the following tools:
+            {tools}
+
+            Use the following format:
+
+            Question: the input question you must answer
+            Thought: you should always think about what to do
+            Action: the action to take, should be one of [{tool_names}]
+            Action Input: the input to the action
+            Observation: the result of the action
+            ... (this Thought/Action/Action Input/Observation can repeat N times)
+            Thought: I now know the final answer
+            Final Answer: the final answer to the original input question
+
+            Begin!
+
+            Question: {input}
+            Thought:{agent_scratchpad}"""
+        )
 
         #Create the agent with the LLM, tools and prompt
         self.agente = create_react_agent(self.llm,self.tools,prompt)
