@@ -9,6 +9,8 @@ from langchain_core.globals import set_debug
 from langchain_core.prompts import PromptTemplate
 from langchain_classic.agents import create_react_agent, Tool
 from herramienta_analisis_imagen import HerramientaAnalisisImagen
+from herramienta_explicar import HerramientaExplicar
+
 
 set_debug(False)
 
@@ -23,6 +25,8 @@ class AgenteOrquestador:
        #Now we add the class that we created in herramienta_analisis_imagen.py, to be used by the agent
         herramienta_analisis_imagen = HerramientaAnalisisImagen()
 
+        herramienta_explicar = HerramientaExplicar()
+
         #second element of the class, a list with the tools that the agent can use, and its functions
         self.tools = [
             Tool(
@@ -30,6 +34,12 @@ class AgenteOrquestador:
                 func=herramienta_analisis_imagen.run,
                 description=herramienta_analisis_imagen.description,
                 return_direct=herramienta_analisis_imagen.return_direct
+            ),
+            Tool(
+                name=herramienta_explicar.name,
+                func=herramienta_explicar.run,
+                description=herramienta_explicar.description,
+                return_direct=herramienta_explicar.return_direct
             )
         ]
 
