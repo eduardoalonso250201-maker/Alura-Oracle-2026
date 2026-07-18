@@ -5,3 +5,5 @@ pydantic==2.12.5
 langchain-community==0.4.2
 transformers==5.14.1
 langchain-text-splitters==1.1.2
+pypdf
+faiss-cpu

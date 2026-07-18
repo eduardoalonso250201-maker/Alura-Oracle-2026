@@ -8,6 +8,8 @@ from langchain_ollama import OllamaEmbeddings, OllamaLLM
 from langchain_community.vectorstores import FAISS
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+
 
 load_dotenv() #se cargann las variables de entorno 
 
@@ -65,6 +67,15 @@ pregunta = "Como solicitar el seguro de viaje?"
 #REALIZAMOS EL MODELO DE INVOKE QUE USARA NUESTRA Y SU RESPECTIVA PREGUNTA
 trechos = retriever.invoke(pregunta) #se recuperan los fragmentos mas similares a la pregunta, desde la base de vectores
 contexto = "\n\n".join(trecho.page_content for trecho in trechos) #se unen los fragmentos en un solo texto, separados por doble salto de linea (generator expression, no lista ni diccionario)
-cadena.invoke({"query": pregunta, "contexto":contexto})#se aplica la cadena para que entre en accion la LLM
-respuesta = cadena.invoke({"query": pregunta, "contexto": contexto}) #se ejecuta la cadena completa: prompt + LLM + parser
-print(respuesta) 
+#cadena.invoke({"query": pregunta, "contexto":contexto})#se aplica la cadena para que entre en accion la LLM
+
+#almacenar respuesta en nuestra RAG
+#se crea un diccionario con contexto y query
+#el objetico de las siguientes lineas es que se haga una cadena para que todas las salidas se tomen como entradas del siguiente paso en lagnsmith
+rag_chain = (
+    {"contexto": RunnablePassthrough() | retriever,#modulo que se tiene de langchain_core.runnable basicamente toma la entrada y la coloca como siguiente entrada para el siguiente paso de lacadena
+     "query": RunnablePassthrough()}
+    | prompt | modelo | StrOutputParser()
+)
+
+rag_chain.invoke(pregunta)
