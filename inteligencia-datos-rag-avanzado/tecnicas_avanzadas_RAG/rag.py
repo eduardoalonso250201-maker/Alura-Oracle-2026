@@ -9,6 +9,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
+from langchain_core.prompts import PromptTemplate
 
 
 load_dotenv() #se cargann las variables de entorno 
@@ -72,9 +73,43 @@ contexto = "\n\n".join(trecho.page_content for trecho in trechos) #se unen los f
 #almacenar respuesta en nuestra RAG
 #se crea un diccionario con contexto y query
 #el objetico de las siguientes lineas es que se haga una cadena para que todas las salidas se tomen como entradas del siguiente paso en lagnsmith
+"""
 rag_chain = (
-    {"contexto": RunnablePassthrough() | retriever,#modulo que se tiene de langchain_core.runnable basicamente toma la entrada y la coloca como siguiente entrada para el siguiente paso de lacadena
+     {"contexto": RunnablePassthrough() | retriever,#modulo que se tiene de langchain_core.runnable basicamente toma la entrada y la coloca como siguiente entrada para el siguiente paso de lacadena
      "query": RunnablePassthrough()}
+    | prompt | modelo | StrOutputParser()
+)
+
+rag_chain.invoke(pregunta)
+"""
+#instanciar un modelo dencillo de ollama 
+query_model = OllamaLLM(model="gemma3:4b")
+
+#template para reescribir las query del usuario 
+rewriter_prompt_template = """
+Genera la consulta de búsqueda para la base de datos de vectores (Vector DB) a partir de una pregunta del usuario,
+permitiendo una respuesta más precisa por medio de la búsqueda semántica.
+Basta devolver la consulta revisada del Vector DB, entre comillas.
+
+# PREGUNTA DEL USUARIO: {user_question}
+# CONSULTA REVISADA DEL VECTOR DB:
+"""
+
+#se ejecuta la funcion que llama a la langhain pasando como contexto nuestro
+rewriter_prompt = PromptTemplate.from_template(rewriter_prompt_template)
+
+#se crea la cadena pero ahora para reescribir con llm la query del usuario y que la respuesta final solo sea el texto respuesta 
+rewriter_chain = rewriter_prompt | query_model | StrOutputParser()
+
+#se invoca todo el proceso
+#rewriter_chain.invoke(pregunta)
+
+
+rag_chain = (
+    {
+        "contexto": RunnablePassthrough() | rewriter_chain | retriever,
+        "query":RunnablePassthrough()
+    }
     | prompt | modelo | StrOutputParser()
 )
 
