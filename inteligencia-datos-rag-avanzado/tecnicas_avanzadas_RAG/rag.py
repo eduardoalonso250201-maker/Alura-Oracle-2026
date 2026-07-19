@@ -10,6 +10,8 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import CommaSeparatedListOutputParser
+
 
 
 load_dotenv() #se cargann las variables de entorno 
@@ -86,6 +88,7 @@ rag_chain.invoke(pregunta)
 query_model = OllamaLLM(model="gemma3:4b")
 
 #template para reescribir las query del usuario 
+
 rewriter_prompt_template = """
 Genera la consulta de búsqueda para la base de datos de vectores (Vector DB) a partir de una pregunta del usuario,
 permitiendo una respuesta más precisa por medio de la búsqueda semántica.
@@ -104,7 +107,7 @@ rewriter_chain = rewriter_prompt | query_model | StrOutputParser()
 #se invoca todo el proceso
 #rewriter_chain.invoke(pregunta)
 
-
+"""
 rag_chain = (
     {
         "contexto": RunnablePassthrough() | rewriter_chain | retriever,
@@ -114,3 +117,41 @@ rag_chain = (
 )
 
 rag_chain.invoke(pregunta)
+"""
+#AHORA COMO HACER VARIAS PREGUNTAS CONSECUTIVAS yY RECIBIR UNA RESPUESTA CON BASE EN NUESTRA BASE DE VECTORES COMO CHATBOT 
+
+#se puede hacer una lista de varias preguntas y usarla como iteraciones de inputs para nuestra cadena
+#Con las siguientes lineas se podria omitir todo lo de rewriter_prompt_template, su cadena, su promt, etc, pero con solo comentar su linea de invoacion ya no hace nada 
+template_multipregunta = """
+Eres un asistente de modelo de lenguajes de IA. Tu tarea es generar cinco versiones diferentes de la pregunta 
+del usuario para recuperar documentos relevantes de una base de datos vectorial. Al generar multiples
+perspectivas sobre la pregunta del usuario, tu objetivo es auxiliar al usuario a superar algunas de las
+limitaciones de la búsqueda por similitud basada en distancia. Debes generar únicamente las preguntas alternativas
+separadas en filas diferentes (new line) sin ningún texto adicional.
+
+# PREGUNTA ORIGINAL: {question}
+
+# FORMATO DE SALIDA :
+["primera pregunta","segunda pregunta",...,"quinta pregunta"]
+"""
+prompt_multipregunta = PromptTemplate.from_template(template_multipregunta)
+chain_multipregunta = prompt_multipregunta | modelo | CommaSeparatedListOutputParser()
+
+preguntas = chain_multipregunta.invoke({"question": pregunta})  
+print(preguntas)
+
+#Una vez que se generaron las cinco preguntas con base en la pregunta del usuario
+#se invoca el rag-chain para que se corra cada una de las preguntass 
+
+rag_chain = (
+    {
+        "contexto": RunnablePassthrough() | retriever,
+        "query":RunnablePassthrough()
+    }
+    | prompt | modelo | StrOutputParser()
+)
+
+
+for p in preguntas:
+    #la respuesta a cada pregunta se ve como corrida separada en langsmith por caad pregunta 
+    rag_chain.invoke(p)
